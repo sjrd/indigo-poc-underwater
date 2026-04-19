@@ -14,7 +14,7 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit]:
 
   val config: GameConfig =
     Config.config.noResize
-      .withMagnification(2)
+      .withMagnification(1)
 
   val assets: Set[AssetType] =
     Assets.assets.assetSet
@@ -23,9 +23,11 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit]:
   val animations: Set[Animation] = Set()
 
   val shaders: Set[ShaderProgram] =
+    println(UnderwaterBlendShader.fragment.toGLSL[WebGL2].toOutput.code)
     Set(
       CustomEntityShader.shader,
-      CustomBlendShader.shader
+      CustomBlendShader.shader,
+      UnderwaterBlendShader.shader,
     )
 
   def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] =
@@ -56,9 +58,32 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit]:
   def present(context: Context[Unit], model: Unit): Outcome[SceneUpdateFragment] =
     val gap = 2
 
+    val grass = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.grass))
+    val wall = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.wall))
+
+    val grid =
+      for
+        i <- 0 until 10
+        j <- 0 until 10
+      yield
+        val g = if (i + j) % 2 == 0 then grass else wall
+        g.moveTo(i * 30, j * 30)
+
     Outcome(
       SceneUpdateFragment(
+        Layer(grid*),
         Layer(
+          //Shape.Box(Rectangle(300, 150), Fill.Color(RGBA.fromHexString("0050d0ff")))
+        )
+          .withBlending(
+            Blending(
+              entity = Blend.Normal,
+              layer = Blend.Normal,
+              blendMaterial = UnderwaterBlendMaterial(),
+              clearColor = None
+            )
+          )
+        /*Layer(
           Graphic(0, 0, 64, 64, Material.Bitmap(Assets.assets.nineslice))
             .moveTo(10, 10)
         ),
@@ -80,7 +105,7 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit]:
             blendMaterial = CustomBlendMaterial(),
             clearColor = None
           )
-        )
+        )*/
       )
     )
   // ```
@@ -113,6 +138,10 @@ final case class CustomBlendMaterial() extends BlendMaterial:
     ShaderData(CustomBlendShader.shader.id)
 // ```
 
+final case class UnderwaterBlendMaterial() extends BlendMaterial:
+  def toShaderData: ShaderData =
+    ShaderData(UnderwaterBlendShader.shader.id)
+
 /** The structure of a blend shader is _very_ similar that seen in the basic entity shader example.
   * There are a number of differences though that all boil down to telling Indigo to expect a blend
   * shader instead of an entity shader.
@@ -143,3 +172,29 @@ object CustomBlendShader:
         mix(env.DST, env.SRC, 0.5f)
     }
 // ```
+
+object UnderwaterBlendShader:
+
+  val shader: ShaderProgram =
+    UltravioletShader.blendFragment(
+      ShaderId("custom-blend-shader"),
+      BlendShader.fragment[BlendFragmentEnv](fragment, BlendFragmentEnv.reference)
+    )
+
+  final val DefaultMaxAmplitude = 2.5f
+  final val DefaultPeriod = 3000f
+  final val DefaultWaveHeight = 23f
+
+  @nowarn("msg=unused")
+  inline def fragment: Shader[BlendFragmentEnv, Unit] =
+    Shader[BlendFragmentEnv] { env =>
+      def fragment(color: vec4): vec4 =
+        val period = 3f
+        val theta = env.TIME % period * env.TAU / period
+        val amplitude = sin(theta) * 2.5f
+        val offset: Float = sin(env.UV.y * env.SIZE.y / 8.0f) * amplitude
+        val offsetPos = vec2(env.UV.x + offset / env.SIZE.x, env.UV.y)
+
+        val orig = texture2D(env.DST_CHANNEL, offsetPos)
+        mix(orig, vec4(0x00/255.0f, 0x50/255.0f, 0xd0/255.0f, 0xff/255.0f), 0.5f)
+    }
