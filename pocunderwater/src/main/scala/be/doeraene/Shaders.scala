@@ -20,6 +20,14 @@ final case class UnderwaterBlendMaterial() extends BlendMaterial:
   def toShaderData: ShaderData =
     ShaderData(UnderwaterBlendShader.shader.id)
 
+final case class StoreAlphaMaskBlendMaterial() extends BlendMaterial:
+  def toShaderData: ShaderData =
+    ShaderData(StoreAlphaMaskBlendShader.shader.id)
+
+final case class ApplyAlphaMaskBlendMaterial() extends BlendMaterial:
+  def toShaderData: ShaderData =
+    ShaderData(ApplyAlphaMaskBlendShader.shader.id)
+
 /** The structure of a blend shader is _very_ similar that seen in the basic entity shader example.
   * There are a number of differences though that all boil down to telling Indigo to expect a blend
   * shader instead of an entity shader.
@@ -52,7 +60,7 @@ object CustomBlendShader {
 object UnderwaterBlendShader {
   val shader: ShaderProgram =
     UltravioletShader.blendFragment(
-      ShaderId("custom-blend-shader"),
+      ShaderId("underwater-blend-shader"),
       BlendShader.fragment[BlendFragmentEnv](fragment, BlendFragmentEnv.reference)
     )
 
@@ -72,6 +80,40 @@ object UnderwaterBlendShader {
 
         val orig = texture2D(env.DST_CHANNEL, offsetPos)
         mix(orig, vec4(0x00/255.0f, 0x50/255.0f, 0xd0/255.0f, 0xff/255.0f), 0.5f)
+    }
+  }
+}
+
+object StoreAlphaMaskBlendShader {
+  val shader: ShaderProgram =
+    UltravioletShader.blendFragment(
+      ShaderId("store-alpha-mask-blend-shader"),
+      BlendShader.fragment[BlendFragmentEnv](fragment, BlendFragmentEnv.reference)
+    )
+
+  @nowarn("msg=unused")
+  inline def fragment: Shader[BlendFragmentEnv, Unit] = {
+    Shader[BlendFragmentEnv] { env =>
+      def fragment(color: vec4): vec4 =
+        vec4(env.DST.r, env.DST.g, env.DST.b, env.SRC.a)
+    }
+  }
+}
+
+object ApplyAlphaMaskBlendShader {
+  val shader: ShaderProgram =
+    UltravioletShader.blendFragment(
+      ShaderId("apply-alpha-mask-blend-shader"),
+      BlendShader.fragment[BlendFragmentEnv](fragment, BlendFragmentEnv.reference)
+    )
+
+  @nowarn("msg=unused")
+  inline def fragment: Shader[BlendFragmentEnv, Unit] = {
+    Shader[BlendFragmentEnv] { env =>
+      def fragment(color: vec4): vec4 =
+        val mixed = mix(env.DST, env.SRC, env.DST.a * env.SRC.a)
+        //vec4(env.DST.r, env.DST.g, env.DST.b, 1.0)
+        vec4(mixed.r, mixed.g, mixed.b, 1.0)
     }
   }
 }

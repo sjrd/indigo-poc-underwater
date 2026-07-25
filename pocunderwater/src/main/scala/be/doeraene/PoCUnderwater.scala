@@ -24,9 +24,11 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit] {
   val shaders: Set[ShaderProgram] =
     //println(UnderwaterBlendShader.fragment.toGLSL[WebGL2].toOutput.code)
     Set(
-      CustomEntityShader.shader,
-      CustomBlendShader.shader,
+      //CustomEntityShader.shader,
+      //CustomBlendShader.shader,
       UnderwaterBlendShader.shader,
+      StoreAlphaMaskBlendShader.shader,
+      ApplyAlphaMaskBlendShader.shader,
     )
 
   def setup(assetCollection: AssetCollection, dice: Dice): Outcome[Startup[Unit]] =
@@ -58,6 +60,9 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit] {
 
     val grass = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.grass))
     val wall = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.wall))
+    val water = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.water))
+    val smallice = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.smallice))
+    val sand = Graphic(0, 0, 30, 30, Material.Bitmap(Assets.assets.sand))
 
     val grid =
       for
@@ -66,6 +71,20 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit] {
       yield
         val g = if (i + j) % 2 == 0 then grass else wall
         g.moveTo(i * 30, j * 30)
+
+    val storeAlphaMaskBlending = Blending(
+      entity = Blend.Normal,
+      layer = Blend.Add(BlendFactor.One, BlendFactor.Zero),
+      blendMaterial = StoreAlphaMaskBlendMaterial(),
+      clearColor = None,
+    )
+
+    val applyAlphaMaskBlending = Blending(
+      entity = Blend.Normal,
+      layer = Blend.Normal,// Blend.Add(BlendFactor.One, BlendFactor.Zero),
+      blendMaterial = ApplyAlphaMaskBlendMaterial(),
+      clearColor = None,
+    )
 
     Outcome(
       SceneUpdateFragment(
@@ -80,7 +99,24 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit] {
               blendMaterial = UnderwaterBlendMaterial(),
               clearColor = None
             )
-          )
+          ),
+        Layer(
+          water.moveTo(30, 30),
+          grass.moveTo(0, 0),
+          grass.moveTo(30, 0),
+          grass.moveTo(0, 30),
+          wall.moveTo(60, 0),
+          wall.moveTo(60, 30),
+          wall.moveTo(60, 60),
+          wall.moveTo(0, 60),
+          wall.moveTo(30, 60),
+        ),
+        Layer(
+          Shape.Box(Rectangle(30, 30, 30, 30), Fill.LinearGradient(Point(0, 45), RGBA.Red, Point(30, 45), RGBA.Red.withAlpha(0.0))),
+        ).withBlending(storeAlphaMaskBlending),
+        Layer(
+          grass.moveTo(30, 30),
+        ).withBlending(applyAlphaMaskBlending),
         /*Layer(
           Graphic(0, 0, 64, 64, Material.Bitmap(Assets.assets.nineslice))
             .moveTo(10, 10)
