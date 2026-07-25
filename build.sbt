@@ -25,7 +25,7 @@ lazy val pocunderwater =
     .settings( // Normal SBT settings
       name         := "pocunderwater",
       version      := "0.0.1",
-      scalaVersion := "3.7.2",
+      scalaVersion := "3.8.4",
       organization := "be.doeraene",
       libraryDependencies ++= Seq(
         "org.scalameta" %%% "munit" % "1.1.1" % Test
