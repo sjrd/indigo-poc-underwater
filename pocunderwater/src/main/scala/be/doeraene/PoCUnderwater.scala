@@ -102,20 +102,45 @@ object PoCUnderwater extends IndigoSandbox[Unit, Unit] {
           ),
         Layer(
           water.moveTo(30, 30),
+          water.moveTo(60, 30),
+          water.moveTo(30, 60),
+          water.moveTo(60, 60),
           grass.moveTo(0, 0),
-          grass.moveTo(30, 0),
+          smallice.moveTo(30, 0),
+          smallice.moveTo(60, 0),
           grass.moveTo(0, 30),
-          wall.moveTo(60, 0),
-          wall.moveTo(60, 30),
-          wall.moveTo(60, 60),
-          wall.moveTo(0, 60),
-          wall.moveTo(30, 60),
+          grass.moveTo(0, 60),
+          wall.moveTo(90, 0),
+          wall.moveTo(90, 30),
+          wall.moveTo(90, 60),
+          wall.moveTo(90, 90),
+          wall.moveTo(0, 90),
+          wall.moveTo(30, 90),
+          wall.moveTo(60, 90),
         ),
         Layer(
-          Shape.Box(Rectangle(30, 30, 30, 30), Fill.LinearGradient(Point(0, 45), RGBA.Red, Point(30, 45), RGBA.Red.withAlpha(0.0))),
+          Shape.Box(Rectangle(30, 30, 30, 30), Fill.LinearGradient(Point(0, 0), RGBA.Red, Point(10, 0), RGBA.Red.withAlpha(0.0))),
         ).withBlending(storeAlphaMaskBlending),
         Layer(
           grass.moveTo(30, 30),
+        ).withBlending(applyAlphaMaskBlending),
+        Layer(
+          Shape.Box(Rectangle(30, 60, 30, 30), Fill.LinearGradient(Point(0, 0), RGBA.Red, Point(10, 0), RGBA.Red.withAlpha(0.0))),
+        ).withBlending(storeAlphaMaskBlending),
+        Layer(
+          grass.moveTo(30, 60),
+        ).withBlending(applyAlphaMaskBlending),
+        Layer(
+          Shape.Box(Rectangle(30, 30, 30, 30), Fill.LinearGradient(Point(0, 0), RGBA.Red, Point(0, 10), RGBA.Red.withAlpha(0.0))),
+        ).withBlending(storeAlphaMaskBlending),
+        Layer(
+          smallice.moveTo(30, 30),
+        ).withBlending(applyAlphaMaskBlending),
+        Layer(
+          Shape.Box(Rectangle(60, 30, 30, 30), Fill.LinearGradient(Point(0, 0), RGBA.Red, Point(0, 10), RGBA.Red.withAlpha(0.0))),
+        ).withBlending(storeAlphaMaskBlending),
+        Layer(
+          smallice.moveTo(60, 30),
         ).withBlending(applyAlphaMaskBlending),
         /*Layer(
           Graphic(0, 0, 64, 64, Material.Bitmap(Assets.assets.nineslice))
